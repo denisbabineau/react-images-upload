@@ -17,14 +17,24 @@ class ReactImageUploadComponent extends React.Component {
     super(props);
     this.state = {
       pictures: props.defaultImage ? [props.defaultImage] : [],
-      files: [],
+      files: props.defaultImage ? [props.defaultImage] : [],
       notAcceptedFileType: [],
-      notAcceptedFileSize: []
+      notAcceptedFileSize: [],
+      preexistingImage: props.defaultImage ? true : false,
     };
     this.inputElement = '';
     this.onDropFile = this.onDropFile.bind(this);
     this.onUploadClick = this.onUploadClick.bind(this);
     this.triggerFileUpload = this.triggerFileUpload.bind(this);
+    
+    // setInterval(()=>{
+        
+    //     console.log( "react-images-upload state:" );
+    //     console.log( this.state );
+    //     console.log( " " );
+        
+    // }, 5000);
+    
   }
 
   componentDidUpdate(prevProps, prevState, snapshot){
@@ -37,9 +47,9 @@ class ReactImageUploadComponent extends React.Component {
    Load image at the beggining if defaultImage prop exists
    */
   componentWillReceiveProps(nextProps){
-    if(nextProps.defaultImage){
-      this.setState({pictures: [nextProps.defaultImage]});
-    }
+    // if(nextProps.defaultImage){
+    //   this.setState({files: [nextProps.defaultImage], pictures: [nextProps.defaultImage]});
+    // }
   }
 
   /*
@@ -83,8 +93,10 @@ class ReactImageUploadComponent extends React.Component {
       const files = this.state.files.slice();
 
       newFilesData.forEach(newFileData => {
-        dataURLs.push(newFileData.dataURL);
-        files.push(newFileData.file);
+        if ( files.length === 0 ) {
+          dataURLs.push(newFileData.dataURL);
+          files.push(newFileData.file);
+        }
       });
 
       this.setState({pictures: dataURLs, files: files});
@@ -126,6 +138,10 @@ class ReactImageUploadComponent extends React.Component {
     this.setState({pictures: filteredPictures, files: filteredFiles}, () => {
       this.props.onChange(this.state.files, this.state.pictures);
     });
+    
+    if(this.state.preexistingImage){
+      this.setState({preexistingImage:false});
+    }
   }
 
   /*
@@ -220,9 +236,17 @@ class ReactImageUploadComponent extends React.Component {
             type={this.props.buttonType}
             className={"chooseFileButton " + this.props.buttonClassName}
             style={this.props.buttonStyles}
-            onClick={this.triggerFileUpload}
+            onClick={ this.state.preexistingImage 
+                        ? () => { 
+                            this.removeImage( this.state.pictures[0] );
+                            this.triggerFileUpload();
+                          } 
+                      : this.state.files.length > 0 
+                        ? this.props.uploadImage 
+                      : this.triggerFileUpload 
+                    }
           >
-            {this.props.buttonText}
+            { ( this.state.preexistingImage ? "Replace image" : this.props.buttonText ) }
           </button>
           <input
             type="file"
@@ -233,6 +257,8 @@ class ReactImageUploadComponent extends React.Component {
             onClick={this.onUploadClick}
             accept={this.props.accept}
           />
+          <div>{ this.props.currentlyUploading ? "Uploading, please wait..." : null }</div>
+          <div>{ this.props.errorMessage }</div>
           { this.props.withPreview ? this.renderPreview() : null }
         </div>
       </div>

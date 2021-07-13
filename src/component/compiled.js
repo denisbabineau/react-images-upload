@@ -50,14 +50,24 @@ var ReactImageUploadComponent = function (_React$Component) {
 
     _this.state = {
       pictures: props.defaultImage ? [props.defaultImage] : [],
-      files: [],
+      files: props.defaultImage ? [props.defaultImage] : [],
       notAcceptedFileType: [],
-      notAcceptedFileSize: []
+      notAcceptedFileSize: [],
+      preexistingImage: props.defaultImage ? true : false
     };
     _this.inputElement = '';
     _this.onDropFile = _this.onDropFile.bind(_this);
     _this.onUploadClick = _this.onUploadClick.bind(_this);
     _this.triggerFileUpload = _this.triggerFileUpload.bind(_this);
+
+    // setInterval(()=>{
+
+    //     console.log( "react-images-upload state:" );
+    //     console.log( this.state );
+    //     console.log( " " );
+
+    // }, 5000);
+
     return _this;
   }
 
@@ -75,11 +85,11 @@ var ReactImageUploadComponent = function (_React$Component) {
 
   }, {
     key: 'componentWillReceiveProps',
-    value: function componentWillReceiveProps(nextProps) {
-      if (nextProps.defaultImage) {
-        this.setState({ pictures: [nextProps.defaultImage] });
-      }
-    }
+    value: function componentWillReceiveProps(nextProps) {}
+    // if(nextProps.defaultImage){
+    //   this.setState({files: [nextProps.defaultImage], pictures: [nextProps.defaultImage]});
+    // }
+
 
     /*
     Check file extension (onDropFile)
@@ -130,8 +140,10 @@ var ReactImageUploadComponent = function (_React$Component) {
         var files = _this2.state.files.slice();
 
         newFilesData.forEach(function (newFileData) {
-          dataURLs.push(newFileData.dataURL);
-          files.push(newFileData.file);
+          if (files.length === 0) {
+            dataURLs.push(newFileData.dataURL);
+            files.push(newFileData.file);
+          }
         });
 
         _this2.setState({ pictures: dataURLs, files: files });
@@ -188,6 +200,10 @@ var ReactImageUploadComponent = function (_React$Component) {
       this.setState({ pictures: filteredPictures, files: filteredFiles }, function () {
         _this3.props.onChange(_this3.state.files, _this3.state.pictures);
       });
+
+      if (this.state.preexistingImage) {
+        this.setState({ preexistingImage: false });
+      }
     }
 
     /*
@@ -303,6 +319,11 @@ var ReactImageUploadComponent = function (_React$Component) {
       this.inputElement.click();
     }
   }, {
+    key: 'clearPictures',
+    value: function clearPictures() {
+      this.setState({ pictures: [] });
+    }
+  }, {
     key: 'render',
     value: function render() {
       var _this6 = this;
@@ -312,7 +333,7 @@ var ReactImageUploadComponent = function (_React$Component) {
         { className: "fileUploader " + this.props.className, style: this.props.style },
         _react2.default.createElement(
           'div',
-          { className: 'fileContainer' },
+          { className: 'fileContainer', style: this.props.fileContainerStyle },
           this.renderIcon(),
           this.renderLabel(),
           _react2.default.createElement(
@@ -326,9 +347,12 @@ var ReactImageUploadComponent = function (_React$Component) {
               type: this.props.buttonType,
               className: "chooseFileButton " + this.props.buttonClassName,
               style: this.props.buttonStyles,
-              onClick: this.triggerFileUpload
+              onClick: this.state.preexistingImage ? function () {
+                _this6.removeImage(_this6.state.pictures[0]);
+                _this6.triggerFileUpload();
+              } : this.state.files.length > 0 ? this.props.uploadImage : this.triggerFileUpload
             },
-            this.props.buttonText
+            this.state.preexistingImage ? "Replace image" : this.props.buttonText
           ),
           _react2.default.createElement('input', {
             type: 'file',
@@ -341,6 +365,16 @@ var ReactImageUploadComponent = function (_React$Component) {
             onClick: this.onUploadClick,
             accept: this.props.accept
           }),
+          _react2.default.createElement(
+            'div',
+            null,
+            this.props.currentlyUploading ? "Uploading, please wait..." : null
+          ),
+          _react2.default.createElement(
+            'div',
+            null,
+            this.props.errorMessage
+          ),
           this.props.withPreview ? this.renderPreview() : null
         )
       );
@@ -352,6 +386,7 @@ var ReactImageUploadComponent = function (_React$Component) {
 
 ReactImageUploadComponent.defaultProps = {
   className: '',
+  fileContainerStyle: {},
   buttonClassName: "",
   buttonStyles: {},
   withPreview: false,
@@ -378,6 +413,7 @@ ReactImageUploadComponent.defaultProps = {
 
 ReactImageUploadComponent.propTypes = {
   style: _propTypes2.default.object,
+  fileContainerStyle: _propTypes2.default.object,
   className: _propTypes2.default.string,
   onChange: _propTypes2.default.func,
   onDelete: _propTypes2.default.func,
